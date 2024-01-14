@@ -55,6 +55,23 @@ class RegisterScreen: UIView {
         return tf
     }()
     
+    lazy var nameTextField: UITextField = {
+        let tf = UITextField()
+        tf.translatesAutoresizingMaskIntoConstraints = false
+        tf.autocorrectionType = .no
+        tf.backgroundColor = UIColor(red: 52/255, green: 52/255, blue: 52/255, alpha: 1.0) /* #343434 */
+        tf.borderStyle = .roundedRect
+        tf.textContentType = .username
+        tf.keyboardType = .emailAddress
+        tf.attributedPlaceholder = NSAttributedString(string: "Digite seu Nome", attributes: [NSAttributedString.Key.foregroundColor : UIColor.white.withAlphaComponent(0.4)])
+        tf.textColor = .white
+        tf.clipsToBounds = true
+        tf.layer.cornerRadius = 12
+        tf.layer.borderWidth = 2.0
+        tf.layer.borderColor = UIColor.white.cgColor
+        return tf
+    }()
+    
     lazy var passwordTextField: UITextField = {
         let tf = UITextField()
         tf.translatesAutoresizingMaskIntoConstraints = false
@@ -106,18 +123,20 @@ class RegisterScreen: UIView {
     }
     
     private func addElements() {
-        self.addSubview(backButton)
-        self.addSubview(imageAddUser)
-        self.addSubview(emailTextField)
-        self.addSubview(passwordTextField)
-        self.addSubview(registerButton)
+        self.addSubview(self.backButton)
+        self.addSubview(self.imageAddUser)
+        self.addSubview(self.emailTextField)
+        self.addSubview(self.nameTextField)
+        self.addSubview(self.passwordTextField)
+        self.addSubview(self.registerButton)
     }
     
     public func validaTextFields() {
-        let email: String = emailTextField.text ?? ""
-        let password: String = passwordTextField.text ?? ""
+        let name: String = self.nameTextField.text ?? ""
+        let email: String = self.emailTextField.text ?? ""
+        let password: String = self.passwordTextField.text ?? ""
         
-        if !email.isEmpty && !password.isEmpty {
+        if !name.isEmpty && !email.isEmpty && !password.isEmpty {
             configButtonEnable(true)
         } else {
             configButtonEnable(false)
@@ -138,6 +157,10 @@ class RegisterScreen: UIView {
         return self.emailTextField.text ?? ""
     }
     
+    public func getName()-> String {
+        return self.nameTextField.text ?? ""
+    }
+    
     public func getPassword()-> String {
         return self.passwordTextField.text ?? ""
     }
@@ -148,6 +171,7 @@ class RegisterScreen: UIView {
     
     func configTextFieldDelegate(delegate: UITextFieldDelegate) {
         self.emailTextField.delegate = delegate
+        self.nameTextField.delegate = delegate
         self.passwordTextField.delegate = delegate
     }
     
@@ -167,7 +191,12 @@ class RegisterScreen: UIView {
             self.emailTextField.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -20),
             self.emailTextField.heightAnchor.constraint(equalToConstant: 45),
             
-            self.passwordTextField.topAnchor.constraint(equalTo: self.emailTextField.bottomAnchor, constant: 15),
+            self.nameTextField.topAnchor.constraint(equalTo: self.emailTextField.bottomAnchor, constant: 15),
+            self.nameTextField.leadingAnchor.constraint(equalTo: self.emailTextField.leadingAnchor),
+            self.nameTextField.trailingAnchor.constraint(equalTo: self.emailTextField.trailingAnchor),
+            self.nameTextField.heightAnchor.constraint(equalTo: self.emailTextField.heightAnchor),
+            
+            self.passwordTextField.topAnchor.constraint(equalTo: self.nameTextField.bottomAnchor, constant: 15),
             self.passwordTextField.leadingAnchor.constraint(equalTo: self.emailTextField.leadingAnchor),
             self.passwordTextField.trailingAnchor.constraint(equalTo: self.emailTextField.trailingAnchor),
             self.passwordTextField.heightAnchor.constraint(equalTo: self.emailTextField.heightAnchor),

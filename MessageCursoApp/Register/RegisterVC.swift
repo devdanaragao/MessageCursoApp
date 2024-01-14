@@ -11,6 +11,7 @@ import Firebase
 class RegisterVC: UIViewController {
     
     var auth: Auth?
+    var firestore: Firestore?
     var screen: RegisterScreen?
     var alert: Alert?
     
@@ -24,6 +25,7 @@ class RegisterVC: UIViewController {
         self.screen?.configTextFieldDelegate(delegate: self)
         self.screen?.delegate(delegate: self)
         self.auth = Auth.auth()
+        self.firestore = Firestore.firestore()
         self.alert = Alert(controller: self)
     }
     
@@ -43,8 +45,21 @@ extension RegisterVC: RegisterScreenProtocol {
             if error != nil {
                 self.alert?.getAlert(titulo: "Atenção", mensagem: "Erro ao cadastrar, Verifique os dados e tente Novamente!")
             }else {
+                
+                //Salvar dados no firebase
+                if let idUsuario = result?.user.uid{
+                    self.firestore?.collection("usuarios").document(idUsuario).setData([
+                        "nome":self.screen?.getName() ?? "",
+                        "email":self.screen?.getEmail() ?? "",
+                        "id":idUsuario
+                    ])
+                }
+                
                 self.alert?.getAlert(titulo: "Parabéns", mensagem: "Usuário cadastrado com sucesso", completion: {
-                    self.navigationController?.popViewController(animated: true)
+                    let VC = HomeVC()
+                    let navVC = UINavigationController(rootViewController: VC)
+                    navVC.modalPresentationStyle = .fullScreen
+                    self.present(navVC, animated: true, completion: nil)
                 })
             }
         })
