@@ -57,6 +57,7 @@ class LoginScreen: UIView {
         tf.layer.cornerRadius = 12
         tf.layer.borderWidth = 2.0
         tf.layer.borderColor = UIColor.white.cgColor
+        tf.text = "Danilo@gmail.com"
         return tf
     }()
     
@@ -75,6 +76,7 @@ class LoginScreen: UIView {
         tf.layer.cornerRadius = 12
         tf.layer.borderWidth = 2.0
         tf.layer.borderColor = UIColor.white.cgColor
+        tf.text = "123456789"
         return tf
     }()
     

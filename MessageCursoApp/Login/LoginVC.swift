@@ -44,8 +44,8 @@ extension LoginVC: LoginScreenProtocol {
     
     func actionLoginButton() {
         
-        let vc: HomeVC = HomeVC()
-        self.navigationController?.pushViewController(vc, animated: true)
+//        let vc: HomeVC = HomeVC()
+//        self.navigationController?.pushViewController(vc, animated: true)
         
         guard let login = self.screen else {return}
         
@@ -58,7 +58,10 @@ extension LoginVC: LoginScreenProtocol {
                 if usuario == nil {
                     self.alert?.getAlert(titulo: "Atenção", mensagem: "Tivemos um problema inesperado, tente novamente mais tarde")
                 } else {
-                    self.alert?.getAlert(titulo: "Parabéns", mensagem: "Usuário logado com sucesso!")
+                    let VC = HomeVC()
+                    let navVC = UINavigationController(rootViewController: VC)
+                    navVC.modalPresentationStyle = .fullScreen
+                    self.present(navVC, animated: true, completion: nil)
                 }
             }
             
