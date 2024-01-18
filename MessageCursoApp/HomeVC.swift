@@ -6,24 +6,188 @@
 //
 
 import UIKit
+import Firebase
 
 class HomeVC: UIViewController {
+    
+    var screen: HomeScreen?
+    var auth: Auth?
+    var db: Firestore?
+    var idUsuarioLogado: String?
+    var screenContact: Bool?
+    var emailUsuarioLogado: String?
+    var alert: Alert?
+    var contato: ContatoController?
+    var listContact: [Contact] = []
+    var listConversas: [Conversation] = []
+    var conversasListener: ListenerRegistration?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        self.navigationController?.navigationBar.isHidden = true
+        self.view.backgroundColor = CustomColor.appLight
+        self.configHomeView()
+        self.configCollectionView()
+        self.configAlert()
+        self.configIdentifierFirebase()
+        self.configContato()
+        self.addListenerRecuperarConversa()
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    override func loadView() {
+        self.screen = HomeScreen()
+        self.view = self.screen
     }
-    */
+    
+    private func configIdentifierFirebase() {
+        self.auth = Auth.auth()
+        self.db = Firestore.firestore()
+        // Recuperar id usuario logado
+        if let currentUser = auth?.currentUser {
+            self.idUsuarioLogado = currentUser.uid
+            self.emailUsuarioLogado = currentUser.email
+        }
+    }
+    
+    private func configContato() {
+        self.contato = ContatoController()
+        self.contato?.delegate(delegate: self)
+    }
+    
+    func addListenerRecuperarConversa() {
+        
+        if let idUsuarioLogado = auth?.currentUser?.uid {
+            self.conversasListener = db?.collection("conversas").document(idUsuarioLogado).collection("ultimas_conversas").addSnapshotListener({ querSnapshot, error in
+                
+                if error == nil {
+                    self.listConversas.removeAll()
+                    
+                    if let snapshot = querSnapshot {
+                        for document in snapshot.documents {
+                            let dados = document.data()
+                            self.listConversas.append(Conversation(dicionario: dados))
+                        }
+                        self.screen?.reloadCollectionView()
+                    }
+                }
+            })
+        }
+        
+    }
+    
+    private func configHomeView(){
+        self.screen?.navView.delegate(delegate: self)
+    }
+    
+    private func configCollectionView(){
+        self.screen?.delegateCollectionView(delegate: self, dataSource: self)
+    }
+    
+    private func configAlert(){
+        self.alert = Alert(controller: self)
+    }
+    
+    func getContato() {
+        self.listContact.removeAll()
+        self.db?.collection("usuarios").document(self.idUsuarioLogado ?? "").collection("contatos").getDocuments(completion: { snapShotResultado, error in
+            
+            if error != nil {
+                print("error getContato")
+                return
+            }
+            
+            if let snapshot = snapShotResultado {
+                for document in snapshot.documents {
+                    let dadosContato = document.data()
+                    self.listContact.append(Contact(dicionario: dadosContato))
+                }
+                self.screen?.reloadCollectionView()
+            }
+            
+        })
+    }
+}
 
+extension HomeVC: NavViewProtocol {
+    func typeScreenMessage(type: TypeConversationOrContact) {
+        
+        switch type {
+        case .contact:
+            self.screenContact = true
+            self.getContato()
+            self.conversasListener?.remove()
+        case .conversation:
+            self.screenContact = false
+            // to do recuperar conversas
+            self.addListenerRecuperarConversa()
+            self.screen?.reloadCollectionView()
+        }
+    }
+}
+
+extension HomeVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if self.screenContact ?? false {
+            return self.listContact.count + 1
+        } else {
+            return self.listConversas.count
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if self.screenContact ?? false {
+            // se for meu ultimo elemento
+            if indexPath.row == self.listContact.count {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MessageLastVC.identifier, for: indexPath)
+                return cell
+            } else {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MessageDetailVC.identifier, for: indexPath) as? MessageDetailVC
+                cell?.setupViewContact(contact: self.listContact[indexPath.row])
+                return cell ?? UICollectionViewCell()
+            }
+        } else {
+            // Celula de Conversas
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MessageDetailVC.identifier, for: indexPath) as? MessageDetailVC
+            cell?.setupViewConversationt(conversation: self.listConversas[indexPath.row])
+            return cell ?? UICollectionViewCell()
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if self.screenContact ?? false {
+            if indexPath.row == self.listContact.count {
+                self.alert?.addContact(completion: { value in
+                    self.contato?.addContact(email: value, emailUsuarioLogado: self.emailUsuarioLogado ?? "", idUsuario: self.idUsuarioLogado ?? "")
+                })
+                
+            } else {
+            
+                let vc: ChatVC = ChatVC()
+                self.navigationController?.pushViewController(vc, animated: true)
+                
+            }
+            
+            
+        } else {
+            
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: 100)
+    }
+    
+}
+
+extension HomeVC: ContatoProtocol {
+    func alertStateError(titulo: String, message: String) {
+        self.alert?.getAlert(titulo: titulo, mensagem: message)
+    }
+    
+    func sucessContato() {
+        self.alert?.getAlert(titulo: "Parabéns", mensagem: "Usuario cadastrado com sucesso!!", completion: {
+            self.getContato()
+        })
+    }
 }
